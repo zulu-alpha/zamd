@@ -20,31 +20,27 @@ def update_mods(steamcmd_path, manifest_url, mod_line, path, username, password)
 
     click.echo(f"Updating the following mods: {mods_manifest['mod-lines'][mod_line]}")
 
-    mod_ids = []
+    mod_ids = {}
     for name in mods_manifest['mod-lines'][mod_line]:
         url = mods_manifest['mods'][name]
-        mod_ids.append(parse_qs(urlparse(url).query)['id'][0])
+        mod_ids[name] = parse_qs(urlparse(url).query)['id'][0]
 
-    command = [
-        steamcmd_path,
-        '+login',
-        username,
-        password,
-        '+force_install_dir',
-        path,
-    ]
-
-    for mod_id in mod_ids:
-        command += [
+    for mod_name, mod_id in mod_ids.items():
+        command = [
+            steamcmd_path,
+            '+login',
+            username,
+            password,
+            '+force_install_dir',
+            path,
             '+workshop_download_item',
             '107410',
             mod_id,
-            'validate',
+            'validate'
+            '+quit'
         ]
-
-    command.append('+quit')
-    click.echo('Executing command: {}'.format(command))
-    run(command)
+        click.echo(f'Executing command: {command}')
+        click.echo(f'Returned with {run(command).returncode}')
 
 if __name__ == '__main__':
     update_mods()
