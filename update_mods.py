@@ -36,7 +36,7 @@ def update_mods(steamcmd_path, manifest_url, mod_line, path, username, password)
             '+workshop_download_item',
             '107410',
             mod_id,
-            'validate'
+            'validate',
             '+quit'
         ]
         click.echo(f'Executing command: {command}')
