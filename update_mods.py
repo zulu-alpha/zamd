@@ -166,26 +166,34 @@ def _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path):
     """Make all the file names in the given directory safe for linux.
     Also copy all key files to destination key directory.
     """
+    key_copied = False
     for parent, directories, files in os.walk(downloaded_dir / mod_dir_name):
         parent = Path(parent)
         for element in directories + files:
             safe_name = make_filename_safe(element)
             os.rename(parent / element, parent / safe_name)
-            _copy_if_key_(parent, mod_dir_name, keys_path, safe_name)
+            key_copied = _copy_if_key_(parent, mod_dir_name, keys_path, safe_name)
+    if not key_copied:
+        click.echo(f'WARNING: A server key for {mod_dir_name} was not found!')
 
 def _copy_if_key_(parent, mod_dir_name, keys_path, safe_name):
-    """If the given directory is a key directory then copy it's contents to the destination key directory"""
+    """If the given directory is a key directory then copy it's contents to the destination key directory
+    Returns True if done so
+    """
     if is_key_dir(parent):
         click.echo(f'Copying server key file for: {mod_dir_name}')
         dest_key_path = Path(keys_path) / safe_name
         if dest_key_path.is_file():
             os.remove(str(dest_key_path))
         shutil.copy2(str(parent / safe_name), keys_path)
+        return True
+    return False
 
 def _save_mods_details_(mods_path, new_mods_details):
     """Save mods details to a json file at the given path"""
     with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as f:
         f.write(json.dumps(new_mods_details))
+
 
 @click.command()
 @click.option('--steamcmd_path', prompt='Path to steamcmd executable')
