@@ -1,0 +1,50 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      User-Agent: [python-requests/2.20.1]
+    method: GET
+    uri: https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/mods_manifest.json
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA82TXYvTQBSG7/srhly50IX5njnepbHiSquy/VJElmk6mME0CUkW0WX/uzNDoYmF
+        vRBXDOQi8z45H+858zBB/kmOxlXJS/QQv+JJNkvvUubPEi6wJhxAJVM00Dcf0M6apq66CIGSEhPG
+        LqBN5fozQoDwEWJyG0XJgAEWl0m2tnB5aWMIwYnWmimSTM9Qmt3OaVCVICCFBjqKkS7cdh5kSTGV
+        GNRYztdmH1StiMBcMzkMHfKn2ZyhrD42pnd7V7r+B0oPh7pC16PSJCXSB1DiooEnAgwMFBykkiy4
+        M/59bdvWT6fzeFa30SyhmaeJfopdmqY7sYJz0GrIrhqbO1O6rkfLUJFpfU3tsUMvVsv0yvfVdq6u
+        YlsAkmE5Lmv9miu0MPdVXngyZsGaK+89G2I/zfGuK+rv78zxND4pgVPFYEi93ZtDFKlP4xsTQ3Hx
+        af3mZrMMOmAQXCnKx7Off4yjx5oKrPhYfLX1RngErZrSVX0ACfULyCnQUQ0zk39r/Pu+ygrbRVBT
+        DJTjsC1n7qYwVW9KEyNx4IQIRWgSgcfp+Spde0/tM9ynP70s6Blvy9/b9v9pK//FYo3WprV5/tvK
+        fJ7tvqDZfVegnWm9C7cBQVlhytJWX23w1fXekauYXwgBhEquT3Enj5NflMu2Nd0FAAA=
+    headers:
+      Accept-Ranges: [bytes]
+      Access-Control-Allow-Origin: ['*']
+      Cache-Control: [max-age=300]
+      Connection: [keep-alive]
+      Content-Encoding: [gzip]
+      Content-Length: ['506']
+      Content-Security-Policy: [default-src 'none'; style-src 'unsafe-inline'; sandbox]
+      Content-Type: [text/plain; charset=utf-8]
+      Date: ['Fri, 16 Nov 2018 01:59:21 GMT']
+      ETag: ['"cac441df892c8d39e0f19c4a11422a626e2d33c4"']
+      Expires: ['Fri, 16 Nov 2018 02:04:21 GMT']
+      Source-Age: ['20']
+      Strict-Transport-Security: [max-age=31536000]
+      Vary: ['Authorization,Accept-Encoding']
+      Via: [1.1 varnish]
+      X-Cache: [HIT]
+      X-Cache-Hits: ['1']
+      X-Content-Type-Options: [nosniff]
+      X-Fastly-Request-ID: [7e147a60beb363e4802e1334981fb93b5a2dde74]
+      X-Frame-Options: [deny]
+      X-Geo-Block-List: ['']
+      X-GitHub-Request-Id: ['7F9E:4FBE:D0E3:F731:5BEE2462']
+      X-Served-By: [cache-jnb7525-JNB]
+      X-Timer: ['S1542333561.102327,VS0,VE0']
+      X-XSS-Protection: [1; mode=block]
+    status: {code: 200, message: OK}
+version: 1

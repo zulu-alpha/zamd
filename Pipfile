@@ -6,9 +6,12 @@ name = "pypi"
 [packages]
 click = "*"
 requests = "*"
+pytest = "*"
+"beautifulsoup4" = "*"
 
 [dev-packages]
 pylint = "*"
+pytest-vcr = "*"
 
 [requires]
 python_version = "3.7"
