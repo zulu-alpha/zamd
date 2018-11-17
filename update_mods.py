@@ -1,3 +1,4 @@
+"""Module for updating a given mod folder and server key folder according to the given mods manifest"""
 import os
 import shutil
 import json
@@ -24,9 +25,9 @@ def get_dependencies(url):
 def get_requests_object(url):
     """Memoization for web requests"""
     if not url in CACHE:
-        r = requests.get(url)
-        assert r.status_code == 200
-        CACHE[url] = r
+        request = requests.get(url)
+        assert request.status_code == 200
+        CACHE[url] = request
     return CACHE[url]
 
 def get_id_from_url(url):
@@ -73,8 +74,7 @@ def get_updated_date(url):
 
 def get_all_mods_manifest(manifest_url):
     """Return a set of urls for all mods in the manifest"""
-    r = get_requests_object(manifest_url)
-    mods_manifest = json.loads(r.text)
+    mods_manifest = json.loads(get_requests_object(manifest_url).text)
     all_mods = set()
     for mod_line in mods_manifest.values():
         for mod in mod_line.values():
@@ -191,8 +191,8 @@ def _copy_if_key_(parent, mod_dir_name, keys_path, safe_name):
 
 def _save_mods_details_(mods_path, new_mods_details):
     """Save mods details to a json file at the given path"""
-    with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as f:
-        f.write(json.dumps(new_mods_details))
+    with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as open_file:
+        open_file.write(json.dumps(new_mods_details))
 
 
 @click.command()
