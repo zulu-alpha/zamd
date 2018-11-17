@@ -162,7 +162,7 @@ def _prepare_mod_dir_(mod_id, downloaded_dir, destination_dir, mod_dir_name):
     os.rename(downloaded_dir / mod_id, downloaded_dir / mod_dir_name)
     shutil.rmtree(str(destination_dir / mod_dir_name), ignore_errors=True)
 
-def _make_all_files_safe_(downloaded_dir, mod_dir_name, keys_path):
+def _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path):
     """Make all the file names in the given directory safe for linux.
     Also copy all key files to destination key directory.
     """
@@ -211,10 +211,10 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
         mod_dir_name = new_mods_details[mod_id]['directory_name']
         click.echo(f"Processing the mod: {new_mods_details[mod_id]['title']}...")
         _prepare_mod_dir_(mod_id, downloaded_dir, destination_dir, mod_dir_name)
-        _make_all_files_safe_(downloaded_dir, mod_dir_name, keys_path)
+        _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path)
         click.echo(f'Moving the mod: {mod_dir_name} to destination...')
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
     _save_mods_details_(mods_path, new_mods_details)
 
 if __name__ == '__main__':
-    update_mods()
+    update_mod
