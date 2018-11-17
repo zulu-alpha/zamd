@@ -149,7 +149,6 @@ def _download_steam_mod_(mod_id, steamcmd_path, username, password, download_pat
             'validate',
             '+quit'
         ]
-        click.echo(f'Executing command: {command}')
         code = run(command).returncode
         if code != 0:
             click.echo(f'WARNING: Mod {title} download returned with code {code}!. Attempt {counter}')
@@ -172,7 +171,7 @@ def _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path):
         for element in directories + files:
             safe_name = make_filename_safe(element)
             os.rename(parent / element, parent / safe_name)
-            key_copied = _copy_if_key_(parent, mod_dir_name, keys_path, safe_name)
+            key_copied = _copy_if_key_(parent, mod_dir_name, keys_path, safe_name) or key_copied
     if not key_copied:
         click.echo(f'WARNING: A server key for {mod_dir_name} was not found!')
 
@@ -187,13 +186,13 @@ def _copy_if_key_(parent, mod_dir_name, keys_path, safe_name):
             os.remove(str(dest_key_path))
         shutil.copy2(str(parent / safe_name), keys_path)
         return True
-    return False
+    else:
+        return False
 
 def _save_mods_details_(mods_path, new_mods_details):
     """Save mods details to a json file at the given path"""
     with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as open_file:
         open_file.write(json.dumps(new_mods_details))
-
 
 @click.command()
 @click.option('--steamcmd_path', prompt='Path to steamcmd executable')
@@ -225,4 +224,4 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
     _save_mods_details_(mods_path, new_mods_details)
 
 if __name__ == '__main__':
-    update_mod
+    update_mods()
