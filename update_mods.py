@@ -226,10 +226,10 @@ def save_modlines(manifest_url, mods_details, mods_path):
 def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path, username, password):
     """Updates mods according to the given mod line decalred in a mods_manifest.json file"""
     new_mods_details, old_mods_details = get_mod_details(manifest_url, mods_path)
-    click.echo(f"Checking mods...: {[mod_details['title'] for mod_details in new_mods_details.values()]}")
+    click.echo(f"Checking which of these mods to download: {[mod_details['title'] for mod_details in new_mods_details.values()]}...")
     to_download = get_mods_to_download(new_mods_details, old_mods_details)
     if to_download:
-        click.echo(f"Only downloading: {[new_mods_details[mod_id]['title'] for mod_id in to_download]}")
+        click.echo(f"Only need to downloading: {[new_mods_details[mod_id]['title'] for mod_id in to_download]}...")
     else:
         return click.echo(f"No mods to download or update according to {Path(mods_path, MODS_DETAILS_PATH)}")
     for mod_id in to_download:
