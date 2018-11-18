@@ -169,33 +169,40 @@ def prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name):
     os.rename(downloaded_dir / mod_id, downloaded_dir / mod_dir_name)
     shutil.rmtree(str(destination_dir / mod_dir_name), ignore_errors=True)
 
-def make_files_safe_and_copy_keys(downloaded_dir, mod_dir_name, keys_path):
-    """Make all the file names in the given directory safe for linux.
-    Also copy all key files to destination key directory.
-    """
-    key_copied = False
-    for parent, directories, files in os.walk(downloaded_dir / mod_dir_name):
-        parent = Path(parent)
-        for element in directories + files:
-            safe_name = make_filename_safe(element)
-            os.rename(parent / element, parent / safe_name)
-            key_copied = copy_if_key(parent, mod_dir_name, keys_path, safe_name) or key_copied
-    if not key_copied:
-        click.echo(f'WARNING: A server key for {mod_dir_name} was not found!')
+def make_files_or_dir_safe(parent, files_or_dirs):
+    """Makes the given files or dirs in the given parent directory unix safe (lowercase, etc...)"""
+    parent = Path(parent)
+    for file_or_dir in files_or_dirs:
+        safe_name = make_filename_safe(file_or_dir)
+        os.rename(parent / file_or_dir, parent / safe_name)
 
-def copy_if_key(parent, mod_dir_name, keys_path, safe_name):
-    """If the given directory is a key directory then copy it's contents to the destination key directory
-    Returns True if done so
+def copy_keys(full_mod_path, keys_path):
+    """Recursively search for the server key directory and copy it's keys to the destination directory.
     """
-    if is_key_dir(parent):
-        click.echo(f'Copying server key file for: {mod_dir_name}')
-        dest_key_path = Path(keys_path) / safe_name
-        if dest_key_path.is_file():
-            os.remove(str(dest_key_path))
-        shutil.copy2(str(parent / safe_name), keys_path)
-        return True
-    else:
-        return False
+    full_mod_path = Path(full_mod_path)
+    keys_path = Path(keys_path)
+    key_copied = False
+    for parent, _, files in os.walk(full_mod_path):
+        parent = Path(parent)
+        if is_key_dir(parent):
+            for file_name in files:
+                click.echo(f'Copying server key file {file_name} for: {full_mod_path.name}')
+                if (keys_path / file_name).is_file():
+                    os.remove(keys_path / file_name)
+                shutil.copy2((parent / file_name), keys_path)
+                key_copied = True
+    if not key_copied:
+        click.echo(f'WARNING: A server key for {full_mod_path.name} was not found!')
+
+def make_files_and_dirs_safe(full_mod_path):
+    """Recursively make all the file and directory names in the given directory safe for linux.
+    """
+    full_mod_path = Path(full_mod_path)
+    # Do files and dirs separately as on linux renaming files could fail if parent dir is changed first
+    for parent, _, files in os.walk(full_mod_path):
+        make_files_or_dir_safe(parent, files)
+    for parent, directories, _ in os.walk(full_mod_path):
+        make_files_or_dir_safe(parent, directories)
 
 def save_mods_details(mods_path, new_mods_details):
     """Save mods details to a json file at the given path"""
@@ -238,9 +245,11 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
         downloaded_dir = Path(download_path, 'steamapps', 'workshop', 'content', '107410')
         destination_dir = Path(mods_path)
         mod_dir_name = new_mods_details[mod_id]['directory_name']
-        click.echo(f"Processing the mod: {new_mods_details[mod_id]['title']}...")
+        click.echo(f"Making file and directory names safe: {new_mods_details[mod_id]['title']}...")
         prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name)
-        make_files_safe_and_copy_keys(downloaded_dir, mod_dir_name, keys_path)
+        make_files_and_dirs_safe(downloaded_dir / mod_dir_name)
+        click.echo(f"Checking for server keys to copy: {new_mods_details[mod_id]['title']}...")
+        copy_keys(downloaded_dir / mod_dir_name, keys_path)
         click.echo(f'Moving the mod: {mod_dir_name} to destination...')
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
     save_mods_details(mods_path, new_mods_details)
