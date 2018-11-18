@@ -116,7 +116,9 @@ def get_mod_details(manifest_url, mods_path):
     """Get new and old mod details json files. These files are used to check the date of the 
     last update and get final dir names
     """
+    click.echo('Collecting urls for all mods in mods manifest...')
     manifest_mod_urls = get_all_mods_manifest_urls(get_mods_manifest(manifest_url))
+    click.echo('Making sure all dependencies are accounted for...')
     all_mod_urls = collect_all_dependencies(manifest_mod_urls)
     new_mods_details = detail_all_mods(all_mod_urls)
     mods_details_path = Path(mods_path, MODS_DETAILS_PATH)
@@ -231,6 +233,7 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
     else:
         return click.echo(f"No mods to download or update according to {Path(mods_path, MODS_DETAILS_PATH)}")
     for mod_id in to_download:
+        click.echo(f"Downloading: {new_mods_details[mod_id]['title']}...")
         download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
         downloaded_dir = Path(download_path, 'steamapps', 'workshop', 'content', '107410')
         destination_dir = Path(mods_path)
