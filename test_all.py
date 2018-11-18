@@ -1,5 +1,7 @@
 import pytest
+import json
 from pathlib import Path
+
 
 @pytest.mark.vcr()
 def test_get_dependencies():
@@ -59,35 +61,15 @@ def test_get_updated_date():
     assert get_updated_date('https://steamcommunity.com/workshop/filedetails/?id=871504836') == '24 Feb, 2017 @ 5:12pm'
 
 @pytest.mark.vcr()
-def test_get_all_mods_manifest():
+def test_get_all_mods_manifest_urls():
     """Get a list of all mod urls in the given manifest url"""
-    from update_mods import get_all_mods_manifest
-    manifest_url = 'https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/mods_manifest.json'
+    from update_mods import get_all_mods_manifest_urls, get_mods_manifest
+    manifest_url = 'https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/test_mods_manifest.json'
     all_urls = {
-        'https://steamcommunity.com/workshop/filedetails/?id=549676314',
-        'https://steamcommunity.com/workshop/filedetails/?id=566942739',
-        'https://steamcommunity.com/workshop/filedetails/?id=751965892',
-        'https://steamcommunity.com/workshop/filedetails/?id=583496184',
-        'https://steamcommunity.com/workshop/filedetails/?id=450814997',
-        'https://steamcommunity.com/workshop/filedetails/?id=1555912648',
-        'https://steamcommunity.com/workshop/filedetails/?id=909547724',
-        'https://steamcommunity.com/workshop/filedetails/?id=508476583',
-        'https://steamcommunity.com/workshop/filedetails/?id=820924072',
-        'https://steamcommunity.com/workshop/filedetails/?id=497660133', 
-        'https://steamcommunity.com/workshop/filedetails/?id=541888371',
-        'https://steamcommunity.com/workshop/filedetails/?id=621650475',
-        'https://steamcommunity.com/workshop/filedetails/?id=520618345',
-        'https://steamcommunity.com/workshop/filedetails/?id=699630614',
-        'https://steamcommunity.com/workshop/filedetails/?id=620260972',
-        'https://steamcommunity.com/workshop/filedetails/?id=1291442929',
-        'https://steamcommunity.com/workshop/filedetails/?id=871504836',
-        'https://steamcommunity.com/workshop/filedetails/?id=583544987',
-        'https://steamcommunity.com/workshop/filedetails/?id=1494115712',
-        'https://steamcommunity.com/workshop/filedetails/?id=708250744',
-        'https://steamcommunity.com/workshop/filedetails/?id=497661914',
-        'https://steamcommunity.com/workshop/filedetails/?id=463939057'
+        'https://steamcommunity.com/workshop/filedetails/?id=333310405',
+        'https://steamcommunity.com/workshop/filedetails/?id=871504836'
     }
-    assert get_all_mods_manifest(manifest_url) == all_urls
+    assert get_all_mods_manifest_urls(get_mods_manifest(manifest_url)) == all_urls
 
 @pytest.mark.vcr()
 def test_detail_all_mods():
@@ -130,3 +112,32 @@ def test_is_key_dir():
     assert is_key_dir(Path('/Steam/steamapps/common/Arma 3/!Workshop/@ace/ServerKeys'))
     assert not is_key_dir('/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/addons')
     assert not is_key_dir('/Steam/steamapps/common/Arma 3/!Workshop/@ace/')
+
+@pytest.mark.vcr()
+def test_save_modlines(tmp_path):
+    """Check that all the correct mod dir names are written to the file"""
+    from update_mods import save_modlines, MODLINES_PATH
+    manifest_url = 'https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/test_mods_manifest.json'
+    mods_details = {
+        '450814997': {
+            'title': 'CBA_A3',
+            'updated': '11 Oct @ 11:05pm',
+            'directory_name': '@cba_a3'
+        },
+        '333310405': {
+            'title': 'Enhanced Movement',
+            'updated': '10 May @ 11:01am',
+            'directory_name': '@enhanced_movement'
+        },
+        '871504836': {
+            'title': 'cTab V2.2.1',
+            'updated': '24 Feb, 2017 @ 5:12pm',
+            'directory_name': '@ctab_v2.2.1'
+        }
+    }
+    save_modlines(manifest_url, mods_details, str(tmp_path))
+    with open(tmp_path / MODLINES_PATH, 'r') as open_file:
+        modlines = json.loads(open_file.read())
+        assert 'main' in modlines and 'recce' in modlines
+        assert '@cba_a3' in modlines['main'] and '@ctab_v2.2.1' in modlines['main']
+        assert '@enhanced_movement' in modlines['recce']

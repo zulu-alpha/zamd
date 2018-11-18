@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 
 STEAM_WORKHOP_PAGE_URL = 'https://steamcommunity.com/workshop/filedetails/'
 MODS_DETAILS_PATH = 'mods_details.json'
+MODLINES_PATH = 'modlines.json'
 CACHE = {}
 
 def get_dependencies(url):
@@ -46,7 +47,9 @@ def get_mod_title(url):
     return soup.find_all('div', class_='workshopItemTitle')[0].contents[0]
 
 def collect_all_dependencies(urls):
-    """Return a set of all steamworkshop mod urls required needed to to use the given urls"""
+    """Return a set of all steamworkshop mod  (dependencies and given urls) needed to use all
+    the mods in the url
+    """
     url_set = set(urls)
     traversed_mods = set()
     for url in urls:
@@ -72,11 +75,14 @@ def get_updated_date(url):
         date = details_column[1].contents[0]
     return date
 
-def get_all_mods_manifest(manifest_url):
-    """Return a set of urls for all mods in the manifest"""
-    mods_manifest = json.loads(get_requests_object(manifest_url).text)
+def get_mods_manifest(manifest_url):
+    """Get a dictionary of the manifest at the given URL"""
+    return json.loads(get_requests_object(manifest_url).text)
+
+def get_all_mods_manifest_urls(manifest_dic):
+    """Return a set of urls for all mods in the manifest dictionary"""
     all_mods = set()
-    for mod_line in mods_manifest.values():
+    for mod_line in manifest_dic.values():
         for mod in mod_line.values():
             all_mods.add(get_url_from_id(mod))
     return all_mods
@@ -106,29 +112,29 @@ def is_key_dir(full_path):
     dir_name = path.name.lower()
     return dir_name in ['key', 'keys', 'serverkey', 'serverkeys', 'server_key', 'server_keys']
 
-def _get_mod_details_(manifest_url, mods_path):
+def get_mod_details(manifest_url, mods_path):
     """Get new and old mod details json files. These files are used to check the date of the 
     last update and get final dir names
     """
-    manifest_mod_urls = get_all_mods_manifest(manifest_url)
+    manifest_mod_urls = get_all_mods_manifest_urls(get_mods_manifest(manifest_url))
     all_mod_urls = collect_all_dependencies(manifest_mod_urls)
     new_mods_details = detail_all_mods(all_mod_urls)
     mods_details_path = Path(mods_path, MODS_DETAILS_PATH)
     if mods_details_path.is_file():
-        with open(mods_details_path) as f:
-            old_mods_details = json.loads(f.read())
+        with open(mods_details_path) as open_file:
+            old_mods_details = json.loads(open_file.read())
     else:
         old_mods_details = dict()
     return new_mods_details, old_mods_details
 
-def _get_mods_to_download_(new_mods_details, old_mods_details):
+def get_mods_to_download(new_mods_details, old_mods_details):
     """Figure out which mods """
     return {
         mod_id for mod_id in new_mods_details if mod_id not in old_mods_details or \
         (mod_id in old_mods_details and old_mods_details[mod_id]['updated'] != new_mods_details[mod_id]['updated'])
     }
 
-def _download_steam_mod_(mod_id, steamcmd_path, username, password, download_path):
+def download_steam_mod(mod_id, steamcmd_path, username, password, download_path):
     """Download the given steam mod using steamcmd"""
     code = -1
     counter = 0
@@ -155,13 +161,13 @@ def _download_steam_mod_(mod_id, steamcmd_path, username, password, download_pat
     if counter == 3:
         click.echo(f'ERROR: Mod {title} failed to download after 3 tries!')
 
-def _prepare_mod_dir_(mod_id, downloaded_dir, destination_dir, mod_dir_name):
+def prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name):
     """Rename the mod directory in the download folder and make sure the destination mod folder is clear of it"""
     shutil.rmtree(str(downloaded_dir / mod_dir_name), ignore_errors=True)
     os.rename(downloaded_dir / mod_id, downloaded_dir / mod_dir_name)
     shutil.rmtree(str(destination_dir / mod_dir_name), ignore_errors=True)
 
-def _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path):
+def make_files_safe_and_copy_keys(downloaded_dir, mod_dir_name, keys_path):
     """Make all the file names in the given directory safe for linux.
     Also copy all key files to destination key directory.
     """
@@ -171,11 +177,11 @@ def _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path):
         for element in directories + files:
             safe_name = make_filename_safe(element)
             os.rename(parent / element, parent / safe_name)
-            key_copied = _copy_if_key_(parent, mod_dir_name, keys_path, safe_name) or key_copied
+            key_copied = copy_if_key(parent, mod_dir_name, keys_path, safe_name) or key_copied
     if not key_copied:
         click.echo(f'WARNING: A server key for {mod_dir_name} was not found!')
 
-def _copy_if_key_(parent, mod_dir_name, keys_path, safe_name):
+def copy_if_key(parent, mod_dir_name, keys_path, safe_name):
     """If the given directory is a key directory then copy it's contents to the destination key directory
     Returns True if done so
     """
@@ -189,10 +195,23 @@ def _copy_if_key_(parent, mod_dir_name, keys_path, safe_name):
     else:
         return False
 
-def _save_mods_details_(mods_path, new_mods_details):
+def save_mods_details(mods_path, new_mods_details):
     """Save mods details to a json file at the given path"""
     with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as open_file:
         open_file.write(json.dumps(new_mods_details))
+
+def save_modlines(manifest_url, mods_details, mods_path):
+    """Save a file that maps all mod folders to mod lines according to the manifest at the given URL"""
+    mods_manifest = get_mods_manifest(manifest_url)
+    modlines = dict()
+    for modline in mods_manifest:
+        mod_urls = collect_all_dependencies([
+            get_url_from_id(mod_id) for mod_id in mods_manifest[modline].values()
+        ])
+        mod_ids = [get_id_from_url(mod_url) for mod_url in mod_urls]
+        modlines[modline] = [mods_details[mod_id]['directory_name'] for mod_id in mod_ids]
+    with open(Path(mods_path, MODLINES_PATH), 'w') as open_file:
+        open_file.write(json.dumps(modlines))
 
 @click.command()
 @click.option('--steamcmd_path', prompt='Path to steamcmd executable')
@@ -204,24 +223,25 @@ def _save_mods_details_(mods_path, new_mods_details):
 @click.option('--password', prompt='Steam Password')
 def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path, username, password):
     """Updates mods according to the given mod line decalred in a mods_manifest.json file"""
-    new_mods_details, old_mods_details = _get_mod_details_(manifest_url, mods_path)
+    new_mods_details, old_mods_details = get_mod_details(manifest_url, mods_path)
     click.echo(f"Checking mods...: {[mod_details['title'] for mod_details in new_mods_details.values()]}")
-    to_download = _get_mods_to_download_(new_mods_details, old_mods_details)
+    to_download = get_mods_to_download(new_mods_details, old_mods_details)
     if to_download:
         click.echo(f"Only downloading: {[new_mods_details[mod_id]['title'] for mod_id in to_download]}")
     else:
         return click.echo(f"No mods to download or update according to {Path(mods_path, MODS_DETAILS_PATH)}")
     for mod_id in to_download:
-        _download_steam_mod_(mod_id, steamcmd_path, username, password, download_path)
+        download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
         downloaded_dir = Path(download_path, 'steamapps', 'workshop', 'content', '107410')
         destination_dir = Path(mods_path)
         mod_dir_name = new_mods_details[mod_id]['directory_name']
         click.echo(f"Processing the mod: {new_mods_details[mod_id]['title']}...")
-        _prepare_mod_dir_(mod_id, downloaded_dir, destination_dir, mod_dir_name)
-        _make_files_safe_and_copy_keys_(downloaded_dir, mod_dir_name, keys_path)
+        prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name)
+        make_files_safe_and_copy_keys(downloaded_dir, mod_dir_name, keys_path)
         click.echo(f'Moving the mod: {mod_dir_name} to destination...')
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
-    _save_mods_details_(mods_path, new_mods_details)
+    save_mods_details(mods_path, new_mods_details)
+    save_modlines(manifest_url, new_mods_details, mods_path)
 
 if __name__ == '__main__':
     update_mods()
