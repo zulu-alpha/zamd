@@ -247,7 +247,9 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
         return click.echo(f"No mods to download or update according to {Path(mods_path, MODS_DETAILS_PATH)}")
     for mod_id in to_download:
         click.echo(f"Downloading: {target_mod_details[mod_id]['title']}...")
-        download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
+        success = download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
+        if not success:
+            continue
         downloaded_dir = Path(download_path, 'steamapps', 'workshop', 'content', '107410')
         destination_dir = Path(mods_path)
         mod_dir_name = target_mod_details[mod_id]['directory_name']
