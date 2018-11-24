@@ -94,17 +94,16 @@ def make_filename_safe(filename):
     filename = filename.replace(' ', '_')
     return filename.lower()
 
-def detail_all_mods(mod_urls):
-    """Get a dictionary dictionary detailing all given mods"""
-    all_mod_details = {}
+def detail_mods(mod_details, mod_urls):
+    """Update the given dictionary with the details for all the given mods based on their URLs"""
     for mod_url in mod_urls:
         title = get_mod_title(mod_url)
-        all_mod_details[get_id_from_url(mod_url)] = {
+        mod_details[get_id_from_url(mod_url)] = {
             'title': title,
             'updated': get_updated_date(mod_url),
             'directory_name': '@' + make_filename_safe(title)
         }
-    return all_mod_details
+    return mod_details
 
 def is_key_dir(full_path):
     """Returns true if the given directory is likely to be a directory"""
@@ -112,32 +111,37 @@ def is_key_dir(full_path):
     dir_name = path.name.lower()
     return dir_name in ['key', 'keys', 'serverkey', 'serverkeys', 'server_key', 'server_keys']
 
+def get_current_mod_details(mods_path):
+    """Get a dictionary containing the current mod details."""
+    mods_details_path = Path(mods_path, MODS_DETAILS_PATH)
+    if mods_details_path.is_file():
+        with open(mods_details_path) as open_file:
+            mods_details = json.loads(open_file.read())
+    else:
+        mods_details = dict()
+    return mods_details
+
 def get_mod_details(manifest_url, mods_path):
-    """Get new and old mod details json files. These files are used to check the date of the 
+    """Get new and old mod details json files. These files are used to check the date of the
     last update and get final dir names
     """
     click.echo('Collecting urls for all mods in mods manifest...')
     manifest_mod_urls = get_all_mods_manifest_urls(get_mods_manifest(manifest_url))
     click.echo('Making sure all dependencies are accounted for...')
     all_mod_urls = collect_all_dependencies(manifest_mod_urls)
-    new_mods_details = detail_all_mods(all_mod_urls)
-    mods_details_path = Path(mods_path, MODS_DETAILS_PATH)
-    if mods_details_path.is_file():
-        with open(mods_details_path) as open_file:
-            old_mods_details = json.loads(open_file.read())
-    else:
-        old_mods_details = dict()
-    return new_mods_details, old_mods_details
+    target_mod_details = detail_mods(dict(), all_mod_urls)
+    current_mods_details = get_current_mod_details(mods_path)
+    return target_mod_details, current_mods_details
 
-def get_mods_to_download(new_mods_details, old_mods_details):
-    """Figure out which mods """
+def get_mods_to_download(target_mods_details, current_mods_details):
+    """Figure out which mods"""
     return {
-        mod_id for mod_id in new_mods_details if mod_id not in old_mods_details or \
-        (mod_id in old_mods_details and old_mods_details[mod_id]['updated'] != new_mods_details[mod_id]['updated'])
+        mod_id for mod_id in target_mods_details if mod_id not in current_mods_details or \
+        (mod_id in current_mods_details and current_mods_details[mod_id]['updated'] != target_mods_details[mod_id]['updated'])
     }
 
 def download_steam_mod(mod_id, steamcmd_path, username, password, download_path):
-    """Download the given steam mod using steamcmd"""
+    """Download the given steam mod using steamcmd. Return BOOL if failed."""
     code = -1
     counter = 0
     title = get_mod_title(get_url_from_id(mod_id))
@@ -159,9 +163,11 @@ def download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
         ]
         code = run(command).returncode
         if code != 0:
-            click.echo(f'WARNING: Mod {title} download returned with code {code}!. Attempt {counter}')
+            click.echo(f'WARNING: Mod {title} download returned with code {code}!. Attempt {counter} of 3')
     if counter == 3:
         click.echo(f'ERROR: Mod {title} failed to download after 3 tries!')
+        return False
+    return True
 
 def prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name):
     """Rename the mod directory in the download folder and make sure the destination mod folder is clear of it"""
@@ -204,10 +210,10 @@ def make_files_and_dirs_safe(full_mod_path):
     for parent, directories, _ in os.walk(full_mod_path):
         make_files_or_dir_safe(parent, directories)
 
-def save_mods_details(mods_path, new_mods_details):
+def save_mods_details(mods_path, mods_details):
     """Save mods details to a json file at the given path"""
     with open(Path(mods_path, MODS_DETAILS_PATH), 'w') as open_file:
-        open_file.write(json.dumps(new_mods_details))
+        open_file.write(json.dumps(mods_details))
 
 def save_modlines(manifest_url, mods_details, mods_path):
     """Save a file that maps all mod folders to mod lines according to the manifest at the given URL"""
@@ -232,28 +238,29 @@ def save_modlines(manifest_url, mods_details, mods_path):
 @click.option('--password', prompt='Steam Password')
 def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path, username, password):
     """Updates mods according to the given mod line decalred in a mods_manifest.json file"""
-    new_mods_details, old_mods_details = get_mod_details(manifest_url, mods_path)
-    click.echo(f"Checking which of these mods to download: {[mod_details['title'] for mod_details in new_mods_details.values()]}...")
-    to_download = get_mods_to_download(new_mods_details, old_mods_details)
+    target_mod_details, current_mods_details = get_mod_details(manifest_url, mods_path)
+    click.echo(f"Checking which of these mods to download: {[mod_details['title'] for mod_details in target_mod_details.values()]}...")
+    to_download = get_mods_to_download(target_mod_details, current_mods_details)
     if to_download:
-        click.echo(f"Only need to downloading: {[new_mods_details[mod_id]['title'] for mod_id in to_download]}...")
+        click.echo(f"Only need to downloading: {[target_mod_details[mod_id]['title'] for mod_id in to_download]}...")
     else:
         return click.echo(f"No mods to download or update according to {Path(mods_path, MODS_DETAILS_PATH)}")
     for mod_id in to_download:
-        click.echo(f"Downloading: {new_mods_details[mod_id]['title']}...")
+        click.echo(f"Downloading: {target_mod_details[mod_id]['title']}...")
         download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
         downloaded_dir = Path(download_path, 'steamapps', 'workshop', 'content', '107410')
         destination_dir = Path(mods_path)
-        mod_dir_name = new_mods_details[mod_id]['directory_name']
-        click.echo(f"Making file and directory names safe: {new_mods_details[mod_id]['title']}...")
+        mod_dir_name = target_mod_details[mod_id]['directory_name']
+        click.echo(f"Making file and directory names safe: {target_mod_details[mod_id]['title']}...")
         prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name)
         make_files_and_dirs_safe(downloaded_dir / mod_dir_name)
-        click.echo(f"Checking for server keys to copy: {new_mods_details[mod_id]['title']}...")
+        click.echo(f"Checking for server keys to copy: {target_mod_details[mod_id]['title']}...")
         copy_keys(downloaded_dir / mod_dir_name, keys_path)
         click.echo(f'Moving the mod: {mod_dir_name} to destination...')
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
-    save_mods_details(mods_path, new_mods_details)
-    save_modlines(manifest_url, new_mods_details, mods_path)
+        current_mods_details = detail_mods(current_mods_details, [get_url_from_id(mod_id)])
+        save_mods_details(mods_path, current_mods_details)
+    save_modlines(manifest_url, current_mods_details, mods_path)
 
 if __name__ == '__main__':
     update_mods()

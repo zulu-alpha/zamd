@@ -72,9 +72,9 @@ def test_get_all_mods_manifest_urls():
     assert get_all_mods_manifest_urls(get_mods_manifest(manifest_url)) == all_urls
 
 @pytest.mark.vcr()
-def test_detail_all_mods():
-    """Check that all given mod urls are fully detailed"""
-    from update_mods import detail_all_mods
+def test_detail_mods():
+    """Check that all given mod urls are fully detailed or appended to existing mods details"""
+    from update_mods import detail_mods
     details = {
         '450814997': {
             'title': 'CBA_A3',
@@ -91,7 +91,20 @@ def test_detail_all_mods():
         'https://steamcommunity.com/workshop/filedetails/?id=450814997',
         'https://steamcommunity.com/workshop/filedetails/?id=463939057'
     }
-    assert detail_all_mods(mod_urls) == details
+    assert detail_mods(dict(), mod_urls) == details
+
+    current_details = {
+        '450814997': {
+            'title': 'CBA_A3',
+            'updated': '11 Oct @ 11:05pm',
+            'directory_name': '@cba_a3'
+        }
+    }
+    mod_urls = {
+        'https://steamcommunity.com/workshop/filedetails/?id=450814997',
+        'https://steamcommunity.com/workshop/filedetails/?id=463939057'
+    }
+    assert detail_mods(current_details, mod_urls) == details
 
 def test_make_filename_safe():
     """Check that the returned filename comes out as expected"""
