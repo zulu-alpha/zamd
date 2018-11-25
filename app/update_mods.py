@@ -269,26 +269,4 @@ def update_mods(steamcmd_path, manifest_url, download_path, mods_path, keys_path
 
 if __name__ == '__main__':
     update_mods()
-
-
-# ERROR: Mod CUP Terrains - Core failed to download after 3 tries!                                                        
-# Traceback (most recent call last):                                                                                      
-#   File "update_mods.py", line 268, in <module>                                                                          
-#     update_mods()                                                                                                       
-#   File "/root/.local/share/virtualenvs/app-JR65as7y/lib/python3.7/site-packages/click/core.py", line 764, in __call__   
-#     return self.main(*args, **kwargs)                                                                                   
-#   File "/root/.local/share/virtualenvs/app-JR65as7y/lib/python3.7/site-packages/click/core.py", line 717, in main       
-#     rv = self.invoke(ctx)                                                                                               
-#   File "/root/.local/share/virtualenvs/app-JR65as7y/lib/python3.7/site-packages/click/core.py", line 956, in invoke     
-#     return ctx.invoke(self.callback, **ctx.params)                                                                      
-#   File "/root/.local/share/virtualenvs/app-JR65as7y/lib/python3.7/site-packages/click/core.py", line 555, in invoke     
-#     return callback(*args, **kwargs)                                                                                    
-#   File "update_mods.py", line 265, in update_mods                                                                       
-#     save_modlines(manifest_url, current_mods_details, mods_path)                                                        
-#   File "update_mods.py", line 227, in save_modlines                                                                     
-#     modlines[modline] = [mods_details[mod_id]['directory_name'] for mod_id in mod_ids]                                  
-#   File "update_mods.py", line 227, in <listcomp>                                                                        
-#     modlines[modline] = [mods_details[mod_id]['directory_name'] for mod_id in mod_ids]                                  
-# KeyError: '583496184'         
-# 
-# 76561198087069343                                                                                          
+                                                                               
