@@ -5,7 +5,7 @@ interactions:
       Accept: ['*/*']
       Accept-Encoding: ['gzip, deflate']
       Connection: [keep-alive]
-      User-Agent: [python-requests/2.20.1]
+      User-Agent: [python-requests/2.21.0]
     method: GET
     uri: https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/test_mods_manifest.json
   response:
@@ -22,9 +22,9 @@ interactions:
       Content-Length: ['98']
       Content-Security-Policy: [default-src 'none'; style-src 'unsafe-inline'; sandbox]
       Content-Type: [text/plain; charset=utf-8]
-      Date: ['Sat, 17 Nov 2018 18:08:10 GMT']
+      Date: ['Fri, 14 Dec 2018 13:08:31 GMT']
       ETag: ['"f350a8ec5f9ba10bf8dbbfcf0a0e781cb56ee7b2"']
-      Expires: ['Sat, 17 Nov 2018 18:13:10 GMT']
+      Expires: ['Fri, 14 Dec 2018 13:13:31 GMT']
       Source-Age: ['0']
       Strict-Transport-Security: [max-age=31536000]
       Vary: ['Authorization,Accept-Encoding']
@@ -32,12 +32,12 @@ interactions:
       X-Cache: [MISS]
       X-Cache-Hits: ['0']
       X-Content-Type-Options: [nosniff]
-      X-Fastly-Request-ID: [1deb3e9e16453a87c76dad51469b9c160e0b69c4]
+      X-Fastly-Request-ID: [807b7651487f5f194cc745c3b27b3824c360602b]
       X-Frame-Options: [deny]
       X-Geo-Block-List: ['']
-      X-GitHub-Request-Id: ['9250:1B64:23D254:2796E0:5BF05909']
+      X-GitHub-Request-Id: ['0A38:123A:33E1EF:3A1CF6:5C13AB47']
       X-Served-By: [cache-jnb7525-JNB]
-      X-Timer: ['S1542478090.174927,VS0,VE286']
+      X-Timer: ['S1544792911.204503,VS0,VE297']
       X-XSS-Protection: [1; mode=block]
     status: {code: 200, message: OK}
 version: 1
