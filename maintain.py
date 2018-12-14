@@ -15,7 +15,7 @@ def maintain(black, pylint, mypy, pytest):
         click.echo("")
         click.echo("****************** Running black ******************")
         click.echo("")
-        result = run(["black", "--py36", "."]).returncode
+        result = run(["black", "--py36", "--line-length=90", "."]).returncode
         if result != 0:
             return result
 
@@ -24,7 +24,7 @@ def maintain(black, pylint, mypy, pytest):
         click.echo("****************** Running pylint ******************")
         click.echo("")
         result = run(
-            ["pylint", "--max-line-length=88", "maintain.py", "tests", "app"]
+            ["pylint", "--max-line-length=90", "maintain.py", "tests", "app"]
         ).returncode
         if result != 0:
             return result
