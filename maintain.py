@@ -5,10 +5,10 @@ import click
 
 
 @click.command()
-@click.option("--black", default=True, help="Use black (linting)?", type=bool)
-@click.option("--pylint", default=True, help="Use pylint (linting)?", type=bool)
-@click.option("--mypy", default=True, help="Use mypy (typing)?", type=bool)
-@click.option("--pytest", default=True, help="Use pytest (testing)?", type=bool)
+@click.option("--black", default=True, help="Run black (linting)?", type=bool)
+@click.option("--pylint", default=True, help="Run pylint (linting)?", type=bool)
+@click.option("--mypy", default=True, help="Run mypy (typing)?", type=bool)
+@click.option("--pytest", default=True, help="Run pytest (testing)?", type=bool)
 def maintain(black, pylint, mypy, pytest):
     """Run various maintainance tools for linting, testing and anything else"""
     if black:
