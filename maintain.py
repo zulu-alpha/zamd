@@ -18,7 +18,7 @@ def maintain(black, pylint, mypy, pytest):
         result = run(["black", "--py36", "--line-length=90", "."]).returncode
         if result != 0:
             return_code = 1
-            click.echo(f"black gave code {result}")
+        click.echo(f"black gave code {result}")
 
     if pylint:
         click.echo("")
@@ -29,7 +29,7 @@ def maintain(black, pylint, mypy, pytest):
         ).returncode
         if result != 0:
             return_code = 1
-            click.echo(f"pylint gave code {result}")
+        click.echo(f"pylint gave code {result}")
 
     if mypy:
         click.echo("")
@@ -38,7 +38,7 @@ def maintain(black, pylint, mypy, pytest):
         result = run(["mypy", "--warn-unused-ignores", "."]).returncode
         if result != 0:
             return_code = 1
-            click.echo(f"mypy gave code {result}")
+        click.echo(f"mypy gave code {result}")
 
     if pytest:
         click.echo("")
@@ -47,7 +47,7 @@ def maintain(black, pylint, mypy, pytest):
         result = run(["pytest"]).returncode
         if result != 0:
             return_code = 1
-            click.echo(f"pytest gave code {result}")
+        click.echo(f"pytest gave code {result}")
 
     return return_code
 
