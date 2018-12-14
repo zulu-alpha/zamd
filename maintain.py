@@ -1,5 +1,4 @@
 """OS agnostic script for running code maintainance tasks"""
-import os
 from subprocess import run
 import click
 
