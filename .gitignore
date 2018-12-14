@@ -3,3 +3,4 @@ __pycache__
 .vscode
 .pytest_cache
 docker-compose.yml
+.mypy_cache
