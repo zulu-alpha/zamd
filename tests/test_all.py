@@ -1,6 +1,7 @@
-import pytest
+"""Test for all files"""
 import json
 from pathlib import Path
+import pytest  # type: ignore
 
 
 @pytest.mark.vcr()
@@ -18,9 +19,7 @@ def test_get_dependencies():
         "https://steamcommunity.com/workshop/filedetails/?id=497660133",
     ]
     assert (
-        get_dependencies(
-            "https://steamcommunity.com/workshop/filedetails/?id=450814997"
-        )
+        get_dependencies("https://steamcommunity.com/workshop/filedetails/?id=450814997")
         == []
     )
 
@@ -79,20 +78,18 @@ def test_collect_all_dependencies():
 
 @pytest.mark.vcr()
 def test_get_updated_date():
-    """Test that the last updated date is returned, or posted date if that is not available"""
+    """Test that the last updated date is returned, or posted date if that is not
+    available
+    """
     from app.update_mods import get_updated_date
 
     assert (
-        get_updated_date(
-            "https://steamcommunity.com/workshop/filedetails/?id=450814997"
-        )
+        get_updated_date("https://steamcommunity.com/workshop/filedetails/?id=450814997")
         == "11 Oct @ 11:05pm"
     )
     # Mod with no update date (cTab at this time)
     assert (
-        get_updated_date(
-            "https://steamcommunity.com/workshop/filedetails/?id=871504836"
-        )
+        get_updated_date("https://steamcommunity.com/workshop/filedetails/?id=871504836")
         == "24 Feb, 2017 @ 5:12pm"
     )
 
@@ -102,7 +99,10 @@ def test_get_all_mods_manifest_urls():
     """Get a list of all mod urls in the given manifest url"""
     from app.update_mods import get_all_mods_manifest_urls, get_mods_manifest
 
-    manifest_url = "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/test_mods_manifest.json"
+    manifest_url = (
+        "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
+        "test_mods_manifest.json"
+    )
     all_urls = {
         "https://steamcommunity.com/workshop/filedetails/?id=333310405",
         "https://steamcommunity.com/workshop/filedetails/?id=871504836",
@@ -112,7 +112,9 @@ def test_get_all_mods_manifest_urls():
 
 @pytest.mark.vcr()
 def test_detail_mods():
-    """Check that all given mod urls are fully detailed or appended to existing mods details"""
+    """Check that all given mod urls are fully detailed or appended to existing mods
+    details
+    """
     from app.update_mods import detail_mods
 
     details = {
@@ -178,7 +180,10 @@ def test_save_modlines(tmp_path):
     """Check that all the correct mod dir names are written to the file"""
     from app.update_mods import save_modlines, MODLINES_PATH
 
-    manifest_url = "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/test_mods_manifest.json"
+    manifest_url = (
+        "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
+        "test_mods_manifest.json"
+    )
     mods_details = {
         "450814997": {
             "title": "CBA_A3",

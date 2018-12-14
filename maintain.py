@@ -32,7 +32,7 @@ def maintain(black, pylint, mypy, pytest):
         click.echo("")
         click.echo("****************** Running mypy ******************")
         click.echo("")
-        result = run(["mypy", "."]).returncode
+        result = run(["mypy", "--warn-unused-ignores", "."]).returncode
         if result != 0:
             return result
 
