@@ -5,29 +5,33 @@ import click
 
 
 @click.command()
-@click.option("--black", default=True, help="Use black (linting)?")
-@click.option("--pylint", default=True, help="Use pylint (linting)?")
-@click.option("--mypy", default=True, help="Use mypy (typing)?")
-@click.option("--pytest", default=True, help="Use pytest (testing)?")
+@click.option("--black", default=True, help="Use black (linting)?", type=bool)
+@click.option("--pylint", default=True, help="Use pylint (linting)?", type=bool)
+@click.option("--mypy", default=True, help="Use mypy (typing)?", type=bool)
+@click.option("--pytest", default=True, help="Use pytest (testing)?", type=bool)
 def maintain(black, pylint, mypy, pytest):
     """Run various maintainance tools for linting, testing and anything else"""
     if black:
         click.echo("")
         click.echo("****************** Running black ****************** ")
         click.echo("")
-        result = run(["black", "."]).returncode
+        result = run(["black", "--py36", "."]).returncode
         if result != 0:
             return result
+
     if pylint:
         click.echo("")
         click.echo("****************** Running pylint ****************** ")
         click.echo("")
         with open("__init__.py", "w") as open_file:
             open_file.write("")
-        result = run(["pylint", "app"]).returncode
+        result = run(
+            ["pylint", "--max-line-length=88", "maintain.py", "tests", "app"]
+        ).returncode
         os.remove("__init__.py")
         if result != 0:
             return result
+
     if mypy:
         click.echo("")
         click.echo("****************** Running mypy ****************** ")
@@ -35,6 +39,7 @@ def maintain(black, pylint, mypy, pytest):
         result = run(["mypy", "."]).returncode
         if result != 0:
             return result
+
     if pytest:
         click.echo("")
         click.echo("****************** Running pytest ****************** ")
@@ -43,6 +48,8 @@ def maintain(black, pylint, mypy, pytest):
         if result != 0:
             return result
 
+    return 0
+
 
 if __name__ == "__main__":
-    maintain()
+    maintain()  # pylint: disable=no-value-for-parameter
