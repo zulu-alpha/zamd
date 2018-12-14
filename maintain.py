@@ -10,13 +10,15 @@ import click
 @click.option("--pytest", default=True, help="Run pytest (testing)?", type=bool)
 def maintain(black, pylint, mypy, pytest):
     """Run various maintainance tools for linting, testing and anything else"""
+    return_code = 0
     if black:
         click.echo("")
         click.echo("****************** Running black ******************")
         click.echo("")
         result = run(["black", "--py36", "--line-length=90", "."]).returncode
         if result != 0:
-            return result
+            return_code = 1
+            click.echo(f"black gave code {result}")
 
     if pylint:
         click.echo("")
@@ -26,7 +28,8 @@ def maintain(black, pylint, mypy, pytest):
             ["pylint", "--max-line-length=90", "maintain.py", "tests", "app"]
         ).returncode
         if result != 0:
-            return result
+            return_code = 1
+            click.echo(f"pylint gave code {result}")
 
     if mypy:
         click.echo("")
@@ -34,7 +37,8 @@ def maintain(black, pylint, mypy, pytest):
         click.echo("")
         result = run(["mypy", "--warn-unused-ignores", "."]).returncode
         if result != 0:
-            return result
+            return_code = 1
+            click.echo(f"mypy gave code {result}")
 
     if pytest:
         click.echo("")
@@ -42,9 +46,10 @@ def maintain(black, pylint, mypy, pytest):
         click.echo("")
         result = run(["pytest"]).returncode
         if result != 0:
-            return result
+            return_code = 1
+            click.echo(f"pytest gave code {result}")
 
-    return 0
+    return return_code
 
 
 if __name__ == "__main__":
