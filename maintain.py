@@ -8,48 +8,40 @@ import click
 @click.option("--pylint", default=True, help="Run pylint (linting)?", type=bool)
 @click.option("--mypy", default=True, help="Run mypy (typing)?", type=bool)
 @click.option("--pytest", default=True, help="Run pytest (testing)?", type=bool)
-def maintain(black, pylint, mypy, pytest):
+def maintain(black: bool, pylint: bool, mypy: bool, pytest: bool) -> None:
     """Run various maintainance tools for linting, testing and anything else"""
-    return_code = 0
+
+    def echo_title(title: str, padding: str = "*") -> None:
+        click.echo("")
+        click.echo(f"{padding}" * 18 + f" {title} " + f"{padding}" * 18)
+        click.echo("")
+
+    return_codes = dict()
     if black:
-        click.echo("")
-        click.echo("****************** Running black ******************")
-        click.echo("")
+        echo_title("Running black")
         result = run(["black", "--py36", "--line-length=90", "."]).returncode
-        if result != 0:
-            return_code = 1
-        click.echo(f"black gave code {result}")
+        return_codes["black"] = result
 
     if pylint:
-        click.echo("")
-        click.echo("****************** Running pylint ******************")
-        click.echo("")
+        echo_title("Running pylint")
         result = run(
             ["pylint", "--max-line-length=90", "maintain.py", "tests", "app"]
         ).returncode
-        if result != 0:
-            return_code = 1
-        click.echo(f"pylint gave code {result}")
+        return_codes["pylint"] = result
 
     if mypy:
-        click.echo("")
-        click.echo("****************** Running mypy ******************")
-        click.echo("")
+        echo_title("Running mypy")
         result = run(["mypy", "--warn-unused-ignores", "."]).returncode
-        if result != 0:
-            return_code = 1
-        click.echo(f"mypy gave code {result}")
+        return_codes["mypy"] = result
 
     if pytest:
-        click.echo("")
-        click.echo("****************** Running pytest ******************")
-        click.echo("")
+        echo_title("Running pytest")
         result = run(["pytest"]).returncode
-        if result != 0:
-            return_code = 1
-        click.echo(f"pytest gave code {result}")
+        return_codes["pytest"] = result
 
-    return return_code
+    echo_title("Return Codes", padding="=")
+    for task, code in return_codes.items():
+        click.echo(f"{task} = {code}")
 
 
 if __name__ == "__main__":
