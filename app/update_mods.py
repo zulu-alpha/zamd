@@ -7,18 +7,19 @@ import json
 from subprocess import run
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 from pathlib import Path
+from typing import List, Set
 import click
 import requests
 from bs4 import BeautifulSoup  # type: ignore
 
 
 STEAM_WORKHOP_PAGE_URL = "https://steamcommunity.com/workshop/filedetails/"
-MODS_DETAILS_PATH = "mods_details.json"
-MODLINES_PATH = "modlines.json"
-CACHE = dict()  # type: dict
+MODS_DETAILS_FILENAME = "mods_details.json"
+MODLINES_FILENAME = "modlines.json"
+CACHE: dict = dict()
 
 
-def get_dependencies(url):
+def get_dependencies(url: str) -> List[str]:
     """Get steam workshop urls for all dependencies with the given mod's workshop url
     """
     soup = BeautifulSoup(get_requests_object(url).text, "html.parser")
@@ -28,7 +29,7 @@ def get_dependencies(url):
     return []
 
 
-def get_requests_object(url):
+def get_requests_object(url: str) -> requests.models.Response:
     """Memoization for web requests"""
     if not url in CACHE:
         request = requests.get(url)
@@ -37,36 +38,36 @@ def get_requests_object(url):
     return CACHE[url]
 
 
-def get_id_from_url(url):
+def get_id_from_url(url: str) -> str:
     """Get the id from the standard steam URL for a workshop item"""
     return parse_qs(urlparse(url).query)["id"][0]
 
 
-def get_url_from_id(mod_id):
+def get_url_from_id(mod_id: str) -> str:
     """Get the workshop URL for the given mod's workshop ID"""
     scheme, netloc, path, params, query, fragment = urlparse(STEAM_WORKHOP_PAGE_URL)
     query = urlencode({"id": mod_id})
     return urlunparse((scheme, netloc, path, params, query, fragment))
 
 
-def get_mod_title(url):
+def get_mod_title(url: str) -> str:
     """Get the title for the given steamworkshop URL"""
     soup = BeautifulSoup(get_requests_object(url).text, "html.parser")
     return soup.find_all("div", class_="workshopItemTitle")[0].contents[0]
 
 
-def collect_all_dependencies(urls):
-    """Return a set of all steamworkshop mod  (dependencies and given urls) needed to
-    use all the mods in the url
+def collect_all_dependencies(urls: Set[str]) -> Set[str]:
+    """Return a set of all steamworkshop mods (dependencies and given urls) needed to
+    use all the mods defined by the given urls
     """
     url_set = set(urls)
-    traversed_mods = set()
+    traversed_mods: set = set()
     for url in urls:
         recurse_dependencies(url, url_set, traversed_mods)
     return url_set
 
 
-def recurse_dependencies(first_url, url_set, traversed_mods):
+def recurse_dependencies(first_url: str, url_set: set, traversed_mods: set) -> set:
     """Recurse dependencies for given url and add to given set"""
     for url in get_dependencies(first_url):
         if not url in traversed_mods:
@@ -76,7 +77,7 @@ def recurse_dependencies(first_url, url_set, traversed_mods):
     return url_set
 
 
-def get_updated_date(url):
+def get_updated_date(url: str) -> str:
     """Get the string as it appears on the steamworkshop page of when it was last
     updated
     """
@@ -89,12 +90,12 @@ def get_updated_date(url):
     return date
 
 
-def get_mods_manifest(manifest_url):
+def get_mods_manifest(manifest_url: str) -> dict:
     """Get a dictionary of the manifest at the given URL"""
     return json.loads(get_requests_object(manifest_url).text)
 
 
-def get_all_mods_manifest_urls(manifest_dic):
+def get_all_mods_manifest_urls(manifest_dic: dict) -> Set[str]:
     """Return a set of urls for all mods in the manifest dictionary"""
     all_mods = set()
     for mod_line in manifest_dic.values():
@@ -103,7 +104,7 @@ def get_all_mods_manifest_urls(manifest_dic):
     return all_mods
 
 
-def make_filename_safe(filename):
+def make_filename_safe(filename: str) -> str:
     """Return a unix safe version of the given filename"""
     safe_characters = (" ", ".", "_", "@")
     filename = "".join(
@@ -113,7 +114,7 @@ def make_filename_safe(filename):
     return filename.lower()
 
 
-def detail_mods(mod_details, mod_urls):
+def detail_mods(mod_details: dict, mod_urls: Set[str]) -> dict:
     """Update the given dictionary with the details for all the given mods based on
     their URLs
     """
@@ -127,10 +128,9 @@ def detail_mods(mod_details, mod_urls):
     return mod_details
 
 
-def is_key_dir(full_path):
-    """Returns true if the given directory is likely to be a directory"""
-    path = Path(full_path)
-    dir_name = path.name.lower()
+def is_key_dir(full_path: Path) -> bool:
+    """Returns true if the given directory is likely to be a directory for keys"""
+    dir_name = full_path.name.lower()
     return dir_name in [
         "key",
         "keys",
@@ -141,9 +141,9 @@ def is_key_dir(full_path):
     ]
 
 
-def get_current_mod_details(mods_path):
+def get_current_mod_details(mods_path: Path) -> dict:
     """Get a dictionary containing the current mod details."""
-    mods_details_path = Path(mods_path, MODS_DETAILS_PATH)
+    mods_details_path = mods_path / MODS_DETAILS_FILENAME
     if mods_details_path.is_file():
         with open(mods_details_path) as open_file:
             mods_details = json.loads(open_file.read())
@@ -152,8 +152,8 @@ def get_current_mod_details(mods_path):
     return mods_details
 
 
-def get_mod_details(manifest_url, mods_path):
-    """Get new and old mod details json files. These files are used to check the date
+def get_target_mod_details(manifest_url: str) -> dict:
+    """Get new mod details dictionaries. This is used to check the date
     of the last update and get final dir names
     """
     click.echo("Collecting urls for all mods in mods manifest...")
@@ -161,12 +161,13 @@ def get_mod_details(manifest_url, mods_path):
     click.echo("Making sure all dependencies are accounted for...")
     all_mod_urls = collect_all_dependencies(manifest_mod_urls)
     target_mod_details = detail_mods(dict(), all_mod_urls)
-    current_mods_details = get_current_mod_details(mods_path)
-    return target_mod_details, current_mods_details
+    return target_mod_details
 
 
-def get_mods_to_download(target_mods_details, current_mods_details):
-    """Figure out which mods"""
+def get_mods_to_download(
+    target_mods_details: dict, current_mods_details: dict
+) -> Set[str]:
+    """Figure out which mods to download based on date and prior existence"""
     return {
         mod_id
         for mod_id in target_mods_details
@@ -179,21 +180,23 @@ def get_mods_to_download(target_mods_details, current_mods_details):
     }
 
 
-def download_steam_mod(mod_id, steamcmd_path, username, password, download_path):
+def download_steam_mod(
+    mod_id: str, steamcmd_path: Path, username: str, password: str, download_path: Path
+) -> bool:
     """Download the given steam mod using steamcmd. Return BOOL if failed."""
     code = -1
     counter = 0
     title = get_mod_title(get_url_from_id(mod_id))
     while code != 0 and counter < 3:
         counter += 1
-        command = [
-            steamcmd_path,
+        command: List[str] = [
+            str(steamcmd_path),
             "+@sSteamCmdForcePlatformType linux",
             "+login",
             username,
             password,
             "+force_install_dir",
-            download_path,
+            str(download_path),
             "+workshop_download_item",
             "107410",
             mod_id,
@@ -214,7 +217,9 @@ def download_steam_mod(mod_id, steamcmd_path, username, password, download_path)
     return True
 
 
-def prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name):
+def prepare_mod_dir(
+    mod_id: str, downloaded_dir: Path, destination_dir: Path, mod_dir_name: str
+) -> None:
     """Rename the mod directory in the download folder and make sure the destination
     mod folder is clear of it
     """
@@ -223,58 +228,55 @@ def prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name):
     shutil.rmtree(str(destination_dir / mod_dir_name), ignore_errors=True)
 
 
-def make_files_or_dir_safe(parent, files_or_dirs):
+def rename_to_safe(parent: str, files_or_dirs: List[str]) -> None:
     """Makes the given files or dirs in the given parent directory unix safe
     eg: lowercase, etc...
     """
-    parent = Path(parent)
+    parent_path = Path(parent)
     for file_or_dir in files_or_dirs:
         safe_name = make_filename_safe(file_or_dir)
-        os.rename(parent / file_or_dir, parent / safe_name)
+        os.rename(parent_path / file_or_dir, parent_path / safe_name)
 
 
-def copy_keys(full_mod_path, keys_path):
+def copy_keys(full_mod_path: Path, keys_path: Path) -> None:
     """Recursively search for the server key directory and copy it's keys to the
     destination directory.
     """
-    full_mod_path = Path(full_mod_path)
-    keys_path = Path(keys_path)
     key_copied = False
     for parent, _, files in os.walk(full_mod_path):
-        parent = Path(parent)
-        if is_key_dir(parent):
+        parent_path = Path(parent)
+        if is_key_dir(parent_path):
             for file_name in files:
                 click.echo(
                     f"Copying server key file {file_name} for: {full_mod_path.name}"
                 )
                 if (keys_path / file_name).is_file():
                     os.remove(keys_path / file_name)
-                shutil.copy2((parent / file_name), keys_path)
+                shutil.copy2((parent_path / file_name), keys_path)
                 key_copied = True
     if not key_copied:
         click.echo(f"WARNING: A server key for {full_mod_path.name} was not found!")
 
 
-def make_files_and_dirs_safe(full_mod_path):
+def make_files_and_dirs_safe(full_mod_path: Path) -> None:
     """Recursively make all the file and directory names in the given directory safe for
     linux.
     """
-    full_mod_path = Path(full_mod_path)
     # Do files and dirs separately as on linux renaming files could fail if parent dir
     # is changed first.
     for parent, _, files in os.walk(full_mod_path):
-        make_files_or_dir_safe(parent, files)
+        rename_to_safe(parent, files)
     for parent, directories, _ in os.walk(full_mod_path):
-        make_files_or_dir_safe(parent, directories)
+        rename_to_safe(parent, directories)
 
 
-def save_mods_details(mods_path, mods_details):
+def save_mods_details(mods_path: str, mods_details: dict) -> None:
     """Save mods details to a json file at the given path"""
-    with open(Path(mods_path, MODS_DETAILS_PATH), "w") as open_file:
+    with open(Path(mods_path, MODS_DETAILS_FILENAME), "w") as open_file:
         open_file.write(json.dumps(mods_details))
 
 
-def save_modlines(manifest_url, mods_details, mods_path):
+def save_modlines(manifest_url: str, mods_details: dict, mods_path: str) -> None:
     """Save a file that maps all mod folders to mod lines according to the manifest at
     the given URL
     """
@@ -282,10 +284,10 @@ def save_modlines(manifest_url, mods_details, mods_path):
     modlines = dict()
     for modline in mods_manifest:
         mod_urls = collect_all_dependencies(
-            [get_url_from_id(mod_id) for mod_id in mods_manifest[modline].values()]
+            {get_url_from_id(mod_id) for mod_id in mods_manifest[modline].values()}
         )
-        mod_ids = [get_id_from_url(mod_url) for mod_url in mod_urls]
-        if set(mod_ids).difference(set(mods_details)):
+        mod_ids = {get_id_from_url(mod_url) for mod_url in mod_urls}
+        if mod_ids.difference(set(mods_details)):
             click.echo(
                 (
                     f"WARNING: Not all mods for modline {modline} was downloaded, "
@@ -294,7 +296,7 @@ def save_modlines(manifest_url, mods_details, mods_path):
             )
             continue
         modlines[modline] = [mods_details[mod_id]["directory_name"] for mod_id in mod_ids]
-    with open(Path(mods_path, MODLINES_PATH), "w") as open_file:
+    with open(Path(mods_path, MODLINES_FILENAME), "w") as open_file:
         open_file.write(json.dumps(modlines))
 
 
@@ -312,7 +314,8 @@ def update_mods(
     """Updates mods according to the given mod line decalred in a mods_manifest.json
     file
     """
-    target_mod_details, current_mods_details = get_mod_details(manifest_url, mods_path)
+    target_mod_details = get_target_mod_details(manifest_url)
+    current_mods_details = get_current_mod_details(mods_path)
     click.echo(
         (
             "Checking which of these mods to download: "
@@ -331,7 +334,7 @@ def update_mods(
         click.echo(
             (
                 "No mods to download or update according to "
-                f"{Path(mods_path, MODS_DETAILS_PATH)}"
+                f"{Path(mods_path, MODS_DETAILS_FILENAME)}"
             )
         )
         return 1
@@ -356,7 +359,7 @@ def update_mods(
         click.echo(
             f"Checking for server keys to copy: {target_mod_details[mod_id]['title']}..."
         )
-        copy_keys(downloaded_dir / mod_dir_name, keys_path)
+        copy_keys(downloaded_dir / mod_dir_name, Path(keys_path))
         click.echo(f"Moving the mod: {mod_dir_name} to destination...")
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
         current_mods_details = detail_mods(
@@ -368,4 +371,4 @@ def update_mods(
 
 
 if __name__ == "__main__":
-    update_mods()  # pylint: disable=no-value-for-parameter
+    update_mods()  # pylint: disable=E1120

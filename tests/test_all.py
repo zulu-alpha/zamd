@@ -164,21 +164,22 @@ def test_is_key_dir():
     """Check that it can figure out if the given path is a key directory"""
     from app.update_mods import is_key_dir
 
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys")
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/")
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/Keys/")
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/Key/")
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/serverkey/")
-    assert is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/ServerKeys")
+    assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys"))
+    assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/"))
+    assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/Keys/"))
+    assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/Key/"))
+    assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/serverkey/"))
     assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/ServerKeys"))
-    assert not is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/addons")
-    assert not is_key_dir("/Steam/steamapps/common/Arma 3/!Workshop/@ace/")
+    assert not is_key_dir(
+        Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/addons")
+    )
+    assert not is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/"))
 
 
 @pytest.mark.vcr()
 def test_save_modlines(tmp_path):
     """Check that all the correct mod dir names are written to the file"""
-    from app.update_mods import save_modlines, MODLINES_PATH
+    from app.update_mods import save_modlines, MODLINES_FILENAME
 
     manifest_url = (
         "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
@@ -202,7 +203,7 @@ def test_save_modlines(tmp_path):
         },
     }
     save_modlines(manifest_url, mods_details, str(tmp_path))
-    with open(tmp_path / MODLINES_PATH, "r") as open_file:
+    with open(tmp_path / MODLINES_FILENAME, "r") as open_file:
         modlines = json.loads(open_file.read())
         assert "main" in modlines and "recce" in modlines
         assert "@cba_a3" in modlines["main"] and "@ctab_v2.2.1" in modlines["main"]
