@@ -8,7 +8,7 @@ import click
 @click.option("--flake8", default=True, help="Run flake8 (linting)?", type=bool)
 @click.option("--mypy", default=True, help="Run mypy (typing)?", type=bool)
 @click.option("--pytest", default=True, help="Run pytest (testing)?", type=bool)
-def maintain(black: bool, flake8: bool, mypy: bool, pytest: bool) -> None:
+def maintain(black: bool, flake8: bool, mypy: bool, pytest: bool) -> int:
     """Run various maintainance tools for linting, testing and anything else"""
 
     def echo_title(title: str, padding: str = "*") -> None:
@@ -40,6 +40,11 @@ def maintain(black: bool, flake8: bool, mypy: bool, pytest: bool) -> None:
     echo_title("Return Codes", padding="=")
     for task, code in return_codes.items():
         click.echo(f"{task} = {code}")
+
+    # Return non zero if any of the tasks did
+    if set(return_codes.values()) != {0}:
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
