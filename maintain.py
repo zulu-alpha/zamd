@@ -34,7 +34,7 @@ def maintain(black: bool, flake8: bool, mypy: bool, pytest: bool) -> int:
 
     if pytest:
         echo_title("Running pytest")
-        result = run(["pytest"]).returncode
+        result = run(["pytest", "--cov"]).returncode
         return_codes["pytest"] = result
 
     echo_title("Return Codes", padding="=")
