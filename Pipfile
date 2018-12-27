@@ -9,11 +9,12 @@ requests = "*"
 "beautifulsoup4" = "*"
 
 [dev-packages]
-pylint = "*"
 pytest-vcr = "*"
 pytest = "*"
 black = "*"
 mypy = "*"
+flake8 = "*"
+flake8-bugbear = "*"
 
 [requires]
 python_version = "3.7"

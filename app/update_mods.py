@@ -31,7 +31,7 @@ def get_dependencies(url: str) -> List[str]:
 
 def get_requests_object(url: str) -> requests.models.Response:
     """Memoization for web requests"""
-    if not url in CACHE:
+    if url not in CACHE:
         request = requests.get(url)
         assert request.status_code == 200
         CACHE[url] = request
@@ -70,7 +70,7 @@ def collect_all_dependencies(urls: Set[str]) -> Set[str]:
 def recurse_dependencies(first_url: str, url_set: set, traversed_mods: set) -> set:
     """Recurse dependencies for given url and add to given set"""
     for url in get_dependencies(first_url):
-        if not url in traversed_mods:
+        if url not in traversed_mods:
             traversed_mods.add(url)
             url_set.add(url)
             recurse_dependencies(url, url_set, traversed_mods)
