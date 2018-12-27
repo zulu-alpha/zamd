@@ -5,3 +5,4 @@ __pycache__
 docker-compose.yml
 .mypy_cache
 .coverage
+htmlcov
