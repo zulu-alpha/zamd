@@ -5,127 +5,14 @@ import os
 import shutil
 import json
 from subprocess import run
-from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 from pathlib import Path
 from typing import List, Set
 import click
-import requests
-from bs4 import BeautifulSoup  # type: ignore
+from app import steam_site, helpers
 
 
-STEAM_WORKHOP_PAGE_URL = "https://steamcommunity.com/workshop/filedetails/"
 MODS_DETAILS_FILENAME = "mods_details.json"
 MODLINES_FILENAME = "modlines.json"
-CACHE: dict = dict()
-
-
-def get_dependencies(url: str) -> List[str]:
-    """Get steam workshop urls for all dependencies with the given mod's workshop url
-    """
-    soup = BeautifulSoup(get_requests_object(url).text, "html.parser")
-    dependency_section = soup.find(id="RequiredItems")
-    if dependency_section:
-        return [link.get("href") for link in dependency_section.find_all("a")]
-    return []
-
-
-def get_requests_object(url: str) -> requests.models.Response:
-    """Memoization for web requests"""
-    if url not in CACHE:
-        request = requests.get(url)
-        assert request.status_code == 200
-        CACHE[url] = request
-    return CACHE[url]
-
-
-def get_id_from_url(url: str) -> str:
-    """Get the id from the standard steam URL for a workshop item"""
-    return parse_qs(urlparse(url).query)["id"][0]
-
-
-def get_url_from_id(mod_id: str) -> str:
-    """Get the workshop URL for the given mod's workshop ID"""
-    scheme, netloc, path, params, query, fragment = urlparse(STEAM_WORKHOP_PAGE_URL)
-    query = urlencode({"id": mod_id})
-    return urlunparse((scheme, netloc, path, params, query, fragment))
-
-
-def get_mod_title(url: str) -> str:
-    """Get the title for the given steamworkshop URL"""
-    soup = BeautifulSoup(get_requests_object(url).text, "html.parser")
-    return soup.find_all("div", class_="workshopItemTitle")[0].contents[0]
-
-
-def collect_all_dependencies(urls: Set[str]) -> Set[str]:
-    """Return a set of all steamworkshop mods (dependencies and given urls) needed to
-    use all the mods defined by the given urls
-    """
-    url_set = set(urls)
-    traversed_mods: set = set()
-    for url in urls:
-        recurse_dependencies(url, url_set, traversed_mods)
-    return url_set
-
-
-def recurse_dependencies(first_url: str, url_set: set, traversed_mods: set) -> set:
-    """Recurse dependencies for given url and add to given set"""
-    for url in get_dependencies(first_url):
-        if url not in traversed_mods:
-            traversed_mods.add(url)
-            url_set.add(url)
-            recurse_dependencies(url, url_set, traversed_mods)
-    return url_set
-
-
-def get_updated_date(url: str) -> str:
-    """Get the string as it appears on the steamworkshop page of when it was last
-    updated
-    """
-    soup = BeautifulSoup(get_requests_object(url).text, "html.parser")
-    details_column = soup.find_all("div", class_="detailsStatRight")
-    try:
-        date = details_column[2].contents[0]
-    except IndexError:
-        date = details_column[1].contents[0]
-    return date
-
-
-def get_mods_manifest(manifest_url: str) -> dict:
-    """Get a dictionary of the manifest at the given URL"""
-    return json.loads(get_requests_object(manifest_url).text)
-
-
-def get_all_mods_manifest_urls(manifest_dic: dict) -> Set[str]:
-    """Return a set of urls for all mods in the manifest dictionary"""
-    all_mods = set()
-    for mod_line in manifest_dic.values():
-        for mod in mod_line.values():
-            all_mods.add(get_url_from_id(mod))
-    return all_mods
-
-
-def make_filename_safe(filename: str) -> str:
-    """Return a unix safe version of the given filename"""
-    safe_characters = (" ", ".", "_", "@")
-    filename = "".join(
-        c for c in filename if c.isalnum() or c in safe_characters
-    ).rstrip()
-    filename = filename.replace(" ", "_")
-    return filename.lower()
-
-
-def detail_mods(mod_details: dict, mod_urls: Set[str]) -> dict:
-    """Update the given dictionary with the details for all the given mods based on
-    their URLs
-    """
-    for mod_url in mod_urls:
-        title = get_mod_title(mod_url)
-        mod_details[get_id_from_url(mod_url)] = {
-            "title": title,
-            "updated": get_updated_date(mod_url),
-            "directory_name": "@" + make_filename_safe(title),
-        }
-    return mod_details
 
 
 def is_key_dir(full_path: Path) -> bool:
@@ -152,18 +39,6 @@ def get_current_mod_details(mods_path: Path) -> dict:
     return mods_details
 
 
-def get_target_mod_details(manifest_url: str) -> dict:
-    """Get new mod details dictionaries. This is used to check the date
-    of the last update and get final dir names
-    """
-    click.echo("Collecting urls for all mods in mods manifest...")
-    manifest_mod_urls = get_all_mods_manifest_urls(get_mods_manifest(manifest_url))
-    click.echo("Making sure all dependencies are accounted for...")
-    all_mod_urls = collect_all_dependencies(manifest_mod_urls)
-    target_mod_details = detail_mods(dict(), all_mod_urls)
-    return target_mod_details
-
-
 def get_mods_to_download(
     target_mods_details: dict, current_mods_details: dict
 ) -> Set[str]:
@@ -186,7 +61,7 @@ def download_steam_mod(
     """Download the given steam mod using steamcmd. Return BOOL if failed."""
     code = -1
     counter = 0
-    title = get_mod_title(get_url_from_id(mod_id))
+    title = steam_site.get_mod_title(steam_site.get_url_from_id(mod_id))
     while code != 0 and counter < 3:
         counter += 1
         command: List[str] = [
@@ -234,7 +109,7 @@ def rename_to_safe(parent: str, files_or_dirs: List[str]) -> None:
     """
     parent_path = Path(parent)
     for file_or_dir in files_or_dirs:
-        safe_name = make_filename_safe(file_or_dir)
+        safe_name = helpers.make_filename_safe(file_or_dir)
         os.rename(parent_path / file_or_dir, parent_path / safe_name)
 
 
@@ -280,13 +155,16 @@ def save_modlines(manifest_url: str, mods_details: dict, mods_path: str) -> None
     """Save a file that maps all mod folders to mod lines according to the manifest at
     the given URL
     """
-    mods_manifest = get_mods_manifest(manifest_url)
+    mods_manifest = helpers.get_mods_manifest(manifest_url)
     modlines = dict()
     for modline in mods_manifest:
-        mod_urls = collect_all_dependencies(
-            {get_url_from_id(mod_id) for mod_id in mods_manifest[modline].values()}
+        mod_urls = steam_site.collect_all_dependencies(
+            {
+                steam_site.get_url_from_id(mod_id)
+                for mod_id in mods_manifest[modline].values()
+            }
         )
-        mod_ids = {get_id_from_url(mod_url) for mod_url in mod_urls}
+        mod_ids = {steam_site.get_id_from_url(mod_url) for mod_url in mod_urls}
         if mod_ids.difference(set(mods_details)):
             click.echo(
                 (
@@ -314,7 +192,7 @@ def update_mods(
     """Updates mods according to the given mod line decalred in a mods_manifest.json
     file
     """
-    target_mod_details = get_target_mod_details(manifest_url)
+    target_mod_details = steam_site.get_target_mod_details(manifest_url)
     current_mods_details = get_current_mod_details(mods_path)
     click.echo(
         (
@@ -362,8 +240,8 @@ def update_mods(
         copy_keys(downloaded_dir / mod_dir_name, Path(keys_path))
         click.echo(f"Moving the mod: {mod_dir_name} to destination...")
         shutil.move(str(downloaded_dir / mod_dir_name), str(destination_dir))
-        current_mods_details = detail_mods(
-            current_mods_details, [get_url_from_id(mod_id)]
+        current_mods_details = steam_site.detail_mods(
+            current_mods_details, [steam_site.get_url_from_id(mod_id)]
         )
         save_mods_details(mods_path, current_mods_details)
     save_modlines(manifest_url, current_mods_details, mods_path)
