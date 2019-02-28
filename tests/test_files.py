@@ -1,4 +1,4 @@
-"""Test for all files"""
+"""Test file specific functions"""
 import json
 from pathlib import Path
 import pytest  # type: ignore
@@ -6,7 +6,7 @@ import pytest  # type: ignore
 
 def test_is_key_dir():
     """Check that it can figure out if the given path is a key directory"""
-    from app.update_mods import is_key_dir
+    from app.files import is_key_dir
 
     assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys"))
     assert is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/keys/"))
@@ -23,7 +23,7 @@ def test_is_key_dir():
 @pytest.mark.vcr()
 def test_save_modlines(tmp_path):
     """Check that all the correct mod dir names are written to the file"""
-    from app.update_mods import save_modlines, MODLINES_FILENAME
+    from app.files import save_modlines, MODLINES_FILENAME
 
     manifest_url = (
         "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
