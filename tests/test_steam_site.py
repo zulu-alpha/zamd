@@ -2,6 +2,12 @@
 import pytest  # type: ignore
 
 
+MANIFEST_URL = (
+    "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
+    "test_mods_manifest.json"
+)
+
+
 @pytest.mark.vcr()
 def test_get_dependencies():
     """Test that dependency urls are received"""
@@ -22,7 +28,7 @@ def test_get_dependencies():
     )
 
 
-def test_get_id_from_url():
+def test_Fid_from_url():
     """Get id out of given url"""
     from app.steam_site import get_id_from_url
 
@@ -98,15 +104,11 @@ def test_get_all_mods_manifest_urls():
     from app.steam_site import get_all_mods_manifest_urls
     from app.helpers import get_mods_manifest
 
-    manifest_url = (
-        "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
-        "test_mods_manifest.json"
-    )
     all_urls = {
         "https://steamcommunity.com/workshop/filedetails/?id=333310405",
         "https://steamcommunity.com/workshop/filedetails/?id=871504836",
     }
-    assert get_all_mods_manifest_urls(get_mods_manifest(manifest_url)) == all_urls
+    assert get_all_mods_manifest_urls(get_mods_manifest(MANIFEST_URL)) == all_urls
 
 
 @pytest.mark.vcr()
@@ -146,3 +148,28 @@ def test_detail_mods():
         "https://steamcommunity.com/workshop/filedetails/?id=463939057",
     }
     assert detail_mods(current_details, mod_urls) == details
+
+
+@pytest.mark.vcr()
+def test_get_all_manifest_mods_details():
+    """Test that the manifest gets downloaded and that details for all mods are gotten"""
+    from app.steam_site import get_all_manifest_mods_details
+
+    details = {
+        "333310405": {
+            "directory_name": "@enhanced_movement",
+            "title": "Enhanced Movement",
+            "updated": "10 May, 2018 @ 11:01am",
+        },
+        "450814997": {
+            "directory_name": "@cba_a3",
+            "title": "CBA_A3",
+            "updated": "10 Jan @ 7:24am",
+        },
+        "871504836": {
+            "directory_name": "@ctab",
+            "title": "cTab",
+            "updated": "24 Feb, 2017 @ 5:12pm",
+        },
+    }
+    assert get_all_manifest_mods_details(MANIFEST_URL) == details

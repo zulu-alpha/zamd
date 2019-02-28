@@ -94,15 +94,11 @@ def detail_mods(mod_details: dict, mod_urls: Set[str]) -> dict:
     return mod_details
 
 
-def get_target_mod_details(manifest_url: str) -> dict:
-    """Get new mod details dictionaries. This is used to check the date
-    of the last update and get final dir names
-    """
+def get_all_manifest_mods_details(manifest_url: str) -> dict:
+    """Get the details for all mods and their dependencies in the given manifest URL"""
     click.echo("Collecting urls for all mods in mods manifest...")
-    manifest_mod_urls = get_all_mods_manifest_urls(
-        helpers.get_mods_manifest(manifest_url)
-    )
+    mods_manifest = helpers.get_mods_manifest(manifest_url)
+    manifest_mods_urls = get_all_mods_manifest_urls(mods_manifest)
     click.echo("Making sure all dependencies are accounted for...")
-    all_mod_urls = collect_all_dependencies(manifest_mod_urls)
-    target_mod_details = detail_mods(dict(), all_mod_urls)
-    return target_mod_details
+    all_mod_urls = collect_all_dependencies(manifest_mods_urls)
+    return detail_mods(dict(), all_mod_urls)

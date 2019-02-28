@@ -192,20 +192,20 @@ def update_mods(
     """Updates mods according to the given mod line decalred in a mods_manifest.json
     file
     """
-    target_mod_details = steam_site.get_target_mod_details(manifest_url)
+    new_mod_details = steam_site.get_all_manifest_mods_details(manifest_url)
     current_mods_details = get_current_mod_details(mods_path)
     click.echo(
         (
             "Checking which of these mods to download: "
-            f"{[mod_details['title'] for mod_details in target_mod_details.values()]}..."
+            f"{[mod_details['title'] for mod_details in new_mod_details.values()]}..."
         )
     )
-    to_download = get_mods_to_download(target_mod_details, current_mods_details)
+    to_download = get_mods_to_download(new_mod_details, current_mods_details)
     if to_download:
         click.echo(
             (
                 "Only need to downloading: "
-                f"{[target_mod_details[mod_id]['title'] for mod_id in to_download]}..."
+                f"{[new_mod_details[mod_id]['title'] for mod_id in to_download]}..."
             )
         )
     else:
@@ -217,7 +217,7 @@ def update_mods(
         )
         return 1
     for mod_id in to_download:
-        click.echo(f"Downloading: {target_mod_details[mod_id]['title']}...")
+        click.echo(f"Downloading: {new_mod_details[mod_id]['title']}...")
         success = download_steam_mod(
             mod_id, steamcmd_path, username, password, download_path
         )
@@ -225,17 +225,17 @@ def update_mods(
             continue
         downloaded_dir = Path(download_path, "steamapps", "workshop", "content", "107410")
         destination_dir = Path(mods_path)
-        mod_dir_name = target_mod_details[mod_id]["directory_name"]
+        mod_dir_name = new_mod_details[mod_id]["directory_name"]
         click.echo(
             (
                 "Making file and directory names safe: "
-                f"{target_mod_details[mod_id]['title']}..."
+                f"{new_mod_details[mod_id]['title']}..."
             )
         )
         prepare_mod_dir(mod_id, downloaded_dir, destination_dir, mod_dir_name)
         make_files_and_dirs_safe(downloaded_dir / mod_dir_name)
         click.echo(
-            f"Checking for server keys to copy: {target_mod_details[mod_id]['title']}..."
+            f"Checking for server keys to copy: {new_mod_details[mod_id]['title']}..."
         )
         copy_keys(downloaded_dir / mod_dir_name, Path(keys_path))
         click.echo(f"Moving the mod: {mod_dir_name} to destination...")
