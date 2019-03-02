@@ -154,22 +154,6 @@ def test_detail_mods():
 def test_get_all_manifest_mods_details():
     """Test that the manifest gets downloaded and that details for all mods are gotten"""
     from app.steam_site import get_all_manifest_mods_details
+    from tests.conftest import MODS_DETAILS
 
-    details = {
-        "333310405": {
-            "directory_name": "@enhanced_movement",
-            "title": "Enhanced Movement",
-            "updated": "10 May, 2018 @ 11:01am",
-        },
-        "450814997": {
-            "directory_name": "@cba_a3",
-            "title": "CBA_A3",
-            "updated": "10 Jan @ 7:24am",
-        },
-        "871504836": {
-            "directory_name": "@ctab",
-            "title": "cTab",
-            "updated": "24 Feb, 2017 @ 5:12pm",
-        },
-    }
-    assert get_all_manifest_mods_details(MANIFEST_URL) == details
+    assert get_all_manifest_mods_details(MANIFEST_URL) == MODS_DETAILS

@@ -4,6 +4,11 @@ from pathlib import Path
 import pytest  # type: ignore
 
 
+def test_get_current_mod_details():
+    """Test that it can properly open the details file or make a new dict"""
+    assert False
+
+
 def test_is_key_dir():
     """Check that it can figure out if the given path is a key directory"""
     from app.files import is_key_dir
@@ -20,35 +25,49 @@ def test_is_key_dir():
     assert not is_key_dir(Path("/Steam/steamapps/common/Arma 3/!Workshop/@ace/"))
 
 
+def test_copy_keys():
+    assert False
+
+
+def test_prepare_mod_dir():
+    assert False
+
+
+def test_save_mods_details():
+    assert False
+
+
+def test_make_files_and_dirs_safe(source_mods, empty_destination):
+    """"""
+    from app.files import make_files_and_dirs_safe, prepare_mod_dir
+    from tests.conftest import MOD_ID_KEY_PAIRS, MODS_DETAILS
+
+    for mod_id, details in MODS_DETAILS.items():
+        prepare_mod_dir(mod_id, source_mods, empty_destination, details["directory_name"])
+
+    make_files_and_dirs_safe(source_mods)
+    for mod_id, key_dir_name in MOD_ID_KEY_PAIRS.items():
+        mod_dir = source_mods / MODS_DETAILS[mod_id]["directory_name"]
+        assert mod_dir / "readme_12.txt"
+        assert (mod_dir / "addons").is_dir()
+        assert (mod_dir / "addons" / "junk_file_1.1.pbo").is_file()
+        assert (mod_dir / key_dir_name.lower()).is_dir()
+        assert (mod_dir / key_dir_name.lower() / "some_key.bikey").is_file()
+
+
 @pytest.mark.vcr()
 def test_save_modlines(tmp_path):
     """Check that all the correct mod dir names are written to the file"""
     from app.files import save_modlines, MODLINES_FILENAME
+    from tests.conftest import MODS_DETAILS
 
     manifest_url = (
         "https://raw.githubusercontent.com/zulu-alpha/mod-lines/master/"
         "test_mods_manifest.json"
     )
-    mods_details = {
-        "450814997": {
-            "title": "CBA_A3",
-            "updated": "11 Oct @ 11:05pm",
-            "directory_name": "@cba_a3",
-        },
-        "333310405": {
-            "title": "Enhanced Movement",
-            "updated": "10 May @ 11:01am",
-            "directory_name": "@enhanced_movement",
-        },
-        "871504836": {
-            "title": "cTab V2.2.1",
-            "updated": "24 Feb, 2017 @ 5:12pm",
-            "directory_name": "@ctab_v2.2.1",
-        },
-    }
-    save_modlines(manifest_url, mods_details, str(tmp_path))
+    save_modlines(manifest_url, MODS_DETAILS, str(tmp_path))
     with open(tmp_path / MODLINES_FILENAME, "r") as open_file:
         modlines = json.loads(open_file.read())
         assert "main" in modlines and "recce" in modlines
-        assert "@cba_a3" in modlines["main"] and "@ctab_v2.2.1" in modlines["main"]
+        assert "@cba_a3" in modlines["main"] and "@ctab" in modlines["main"]
         assert "@enhanced_movement" in modlines["recce"]
