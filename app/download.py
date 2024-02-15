@@ -1,12 +1,15 @@
 """Module for updating a given mod folder and server key folder according to the given
 mods manifest
 """
+
 import shutil
-from subprocess import run
 from pathlib import Path
+from subprocess import run
 from typing import List, Set
+
 import click
-from app import steam_site, files
+
+from app import files, steam_site
 
 
 def get_mods_to_download(new_mods_details: dict, current_mods_details: dict) -> Set[str]:
@@ -29,21 +32,21 @@ def download_steam_mod(
     """Download the given steam mod using steamcmd. Return BOOL if failed."""
     code = -1
     counter = 0
+    tries = 10
     title = steam_site.get_mod_title(steam_site.get_url_from_id(mod_id))
-    while code != 0 and counter < 3:
+    while code != 0 and counter < tries:
         counter += 1
         command: List[str] = [
             str(steamcmd_path),
             "+@sSteamCmdForcePlatformType linux",
+            "+force_install_dir",
+            str(download_path),
             "+login",
             username,
             password,
-            "+force_install_dir",
-            str(download_path),
             "+workshop_download_item",
             "107410",
             mod_id,
-            "validate",
             "+quit",
         ]
         code = run(command).returncode
@@ -51,11 +54,11 @@ def download_steam_mod(
             click.echo(
                 (
                     f"WARNING: Mod {title} download returned with code {code}! "
-                    f"Attempt {counter} of 3"
+                    f"Attempt {counter} of {tries}"
                 )
             )
-    if counter == 3:
-        click.echo(f"ERROR: Mod {title} failed to download after 3 tries!")
+    if counter == tries:
+        click.echo(f"ERROR: Mod {title} failed to download after {tries} tries!")
         return False
     return True
 
