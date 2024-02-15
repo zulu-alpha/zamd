@@ -1,7 +1,7 @@
 """Test file specific functions"""
 import json
 from pathlib import Path
-import pytest  # type: ignore
+import pytest
 
 
 def test_get_current_mod_details():
@@ -38,7 +38,7 @@ def test_save_mods_details():
 
 
 def test_make_files_and_dirs_safe(source_mods, empty_destination):
-    """"""
+    """Test that files and directories are renamed to linux safe names"""
     from app.files import make_files_and_dirs_safe, prepare_mod_dir
     from tests.conftest import MOD_ID_KEY_PAIRS, MODS_DETAILS
 

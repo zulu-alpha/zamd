@@ -1,7 +1,7 @@
 """Code to scrape the Steam site for workshop item details"""
 from typing import List, Set
 from urllib.parse import urlparse, parse_qs, urlunparse, urlencode
-from bs4 import BeautifulSoup  # type: ignore
+from bs4 import BeautifulSoup
 import click
 from app import helpers
 
